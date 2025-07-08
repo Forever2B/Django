@@ -1,38 +1,13 @@
-import factory
-from faker import Factory as FakerFactory
+import pytest
 
-from django.contrib.auth.models import User
-from django.utils.timezone import now
+from blog.factories import PostFactory
 
-from blog.models import Post
+@pytest.fixture
 
-faker = FakerFactory.create()
-
-
-class UserFactory(factory.django.DjangoModelFactory):
-    class Meta:
-        model = User
-
-    email = factory.Faker("safe_email")
-    username = factory.LazyAttribute(lambda x: faker.name())
+def post_published():
+    return PostFactory(title='pytest with factory')
 
 
-    @classmethod
-    def _prepare(cls, create, **kwargs):
-        password = kwargs.pop("password", None)
-        user = super(UserFactory, cls)._prepare(create, **kwargs)
-        if password:
-            user.set_password(password)
-            if create:
-                user.save()
-            return user
-        
-class PostFactory(factory.django.DjangoModelFactory):
-    title = factory.LazyAttribute(lambda x: faker.sentence())
-    created_on = factory.LazyAttribute(lambda x: now())
-    author = factory.SubFactory(UserFactory)
-    status = 0
-
-
-    class Meta:
-        model = Post
+@pytest.mark.django_db
+def test_create_published_post(post_published):
+    assert post_published.title == 'pytest with factory'
